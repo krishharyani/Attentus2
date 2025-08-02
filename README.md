@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Attentus is an AI-powered medical consult note automation system designed to help doctors streamline their documentation process. The application leverages artificial intelligence to automatically generate and format medical consultation notes, reducing administrative burden and allowing healthcare professionals to focus more on patient care.
+Attentus: AI-powered medical consult note automation for doctors
 
 ## Prerequisites
 
