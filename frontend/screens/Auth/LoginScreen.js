@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import client from '../../api/client';
+import BACKEND_URL from '../../api/client';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -17,17 +17,19 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
     try {
-      const response = await client.post('/auth/login', {
-        email,
-        password,
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
-
-      await AsyncStorage.setItem('token', response.data.token);
-      await AsyncStorage.setItem('doctor', JSON.stringify(response.data.doctor));
+      if (!response.ok) throw await response.json();
+      const data = await response.json();
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('doctor', JSON.stringify(data.doctor));
       
       // Navigate to main app (handled by RootNavigator)
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Login failed');
+      Alert.alert('Error', error.message || error?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
