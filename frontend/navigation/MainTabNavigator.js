@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import AddPatientScreen from '../screens/AddPatientScreen';
@@ -72,7 +73,34 @@ export default function MainTabNavigator() {
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="AddPatient" component={AddPatientScreen} />
-      <Tab.Screen name="Record" component={RecordStack} />
+      <Tab.Screen 
+        name="Record"
+        component={RecordStack}
+        options={{
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                borderRadius: 40,
+                width: 70,
+                height: 70,
+                backgroundColor: '#64B6AC',
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+                elevation: 5,
+              }}
+            >
+              <Ionicons name="add" size={36} color="white" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <Tab.Screen name="Chats" component={ChatsStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
