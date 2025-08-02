@@ -6,37 +6,50 @@ import { generateConsultNote } from '../services/aiService.js';
 
 const upload = multer();
 
+// Schedule a future appointment (no audio/transcript/notes yet)
+export const scheduleAppointment = async (req, res) => {
+  try {
+    const { patientId, title, date } = req.body;
+    const appt = await Appointment.create({
+      doctor:  req.doctor._id,
+      patient: patientId,
+      title,
+      date,
+      status: 'Pending'
+    });
+    res.status(201).json(appt);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 // Upload recording & kick off transcription + AI note
 export const recordAppointment = [
   upload.single('audio'),
   async (req, res) => {
     try {
-      const { patientId, title, date, weight, height } = req.body;
-      // upload raw audio to Firebase
+      const { weight, height } = req.body;
+      const appt = await Appointment.findById(req.params.id);
+      if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+
+      // upload raw audio
       const bucket = firebaseAdmin.storage().bucket();
       const filePath = `recordings/${Date.now()}_${req.file.originalname}`;
       const file = bucket.file(filePath);
       await file.save(req.file.buffer, { contentType: req.file.mimetype });
       const recordingUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
 
-      // create appointment entry
-      const appt = await Appointment.create({
-        doctor:      req.doctor._id,
-        patient:     patientId,
-        title,
-        date,
-        weight,
-        height,
-        recordingUrl
-      });
-
-      // transcribe & generate note
-      const transcript = await transcribeAudio(recordingUrl);
+      // transcription + AI note
+      const transcript  = await transcribeAudio(recordingUrl);
       const consultNote = await generateConsultNote(transcript, req.doctor.template);
 
-      appt.transcript  = transcript;
-      appt.consultNote = consultNote;
-      appt.status      = 'Completed';
+      // update appointment
+      appt.recordingUrl = recordingUrl;
+      appt.transcript   = transcript;
+      appt.consultNote  = consultNote;
+      appt.weight       = weight || appt.weight;
+      appt.height       = height || appt.height;
+      appt.status       = 'Completed';
       await appt.save();
 
       res.json(appt);
@@ -67,4 +80,21 @@ export const getAppointment = async (req, res) => {
     .populate('doctor', '-password');
   if (!appt) return res.status(404).json({ message: 'Not found' });
   res.json(appt);
+};
+
+// Edit an existing consult note (and optionally weight/height)
+export const updateAppointment = async (req, res) => {
+  try {
+    const { consultNote, weight, height } = req.body;
+    const appt = await Appointment.findById(req.params.id);
+    if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+
+    if (consultNote !== undefined) appt.consultNote = consultNote;
+    if (weight       !== undefined) appt.weight       = weight;
+    if (height       !== undefined) appt.height       = height;
+    await appt.save();
+    res.json(appt);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

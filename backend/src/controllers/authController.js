@@ -7,15 +7,25 @@ import { firebaseAdmin } from '../config/firebase.js';
 export const signup = async (req, res) => {
   try {
     const { name, email, password, profession, template } = req.body;
-    const voiceSample = req.file;
-    const bucket = firebaseAdmin.storage().bucket();
-    const file = bucket.file(`voiceProfiles/${Date.now()}_${voiceSample.originalname}`);
-    await file.save(voiceSample.buffer, { contentType: voiceSample.mimetype });
-    const voiceProfileUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    
+    // at the top of the signup function
+    let voiceProfileUrl = '';
+    if (req.file) {
+      // existing upload logic
+      const bucket = firebaseAdmin.storage().bucket();
+      const file = bucket.file(`voiceProfiles/${Date.now()}_${req.file.originalname}`);
+      await file.save(req.file.buffer, { contentType: req.file.mimetype });
+      voiceProfileUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    }
 
     const hashed = await bcrypt.hash(password, 10);
-    const doctor = await Doctor.create({ 
-      name, email, profession, password: hashed, template, voiceProfileUrl 
+    const doctor = await Doctor.create({
+      name,
+      email,
+      profession,
+      password: hashed,
+      template,
+      voiceProfileUrl
     });
 
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '7d' });

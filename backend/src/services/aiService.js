@@ -6,7 +6,7 @@ You are a medical scribe. Given this transcript of a doctor–patient consultati
 ###
 ${transcript}
 ###
-And this doctor’s note template:
+And this doctor’s consultation note template:
 ###
 ${template}
 ###

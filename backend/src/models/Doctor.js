@@ -6,7 +6,8 @@ const doctorSchema = new mongoose.Schema({
   profession: { type: String, required: true },
   password: { type: String, required: true },
   template: { type: String, required: true },
-  voiceProfileUrl: { type: String, required: true },
+  voiceProfileUrl: { type: String, required: false },
+  signatureUrl:    { type: String },
 }, { timestamps: true });
 
 export default mongoose.model('Doctor', doctorSchema);
