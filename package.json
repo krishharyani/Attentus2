@@ -1,0 +1,25 @@
+{
+  "name": "attentus",
+  "version": "1.0.0",
+  "description": "Attentus: AI-powered medical consult note automation for doctors",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ylabidi11/Attentus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ylabidi11/Attentus/issues"
+  },
+  "homepage": "https://github.com/ylabidi11/Attentus#readme",
+  "dependencies": {
+    "concurrently": "^9.2.0",
+    "dotenv": "^17.2.1"
+  }
+}

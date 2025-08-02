@@ -55,3 +55,14 @@ npm run start
 ```
 
 The frontend will start the Expo development server, allowing you to run the mobile app on your device or emulator.
+
+Attentus
+
+A React Native + Node.js/Express + MongoDB + Firebase + Google Speech + OpenAI hackathon project for doctors.
+
+├── frontend
+├── backend
+│   └── credentials
+├── .env
+├── .gitignore
+└── README.md

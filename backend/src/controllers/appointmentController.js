@@ -1,0 +1,70 @@
+import multer from 'multer';
+import { firebaseAdmin } from '../config/firebase.js';
+import Appointment from '../models/Appointment.js';
+import { transcribeAudio } from '../services/transcriptionService.js';
+import { generateConsultNote } from '../services/aiService.js';
+
+const upload = multer();
+
+// Upload recording & kick off transcription + AI note
+export const recordAppointment = [
+  upload.single('audio'),
+  async (req, res) => {
+    try {
+      const { patientId, title, date, weight, height } = req.body;
+      // upload raw audio to Firebase
+      const bucket = firebaseAdmin.storage().bucket();
+      const filePath = `recordings/${Date.now()}_${req.file.originalname}`;
+      const file = bucket.file(filePath);
+      await file.save(req.file.buffer, { contentType: req.file.mimetype });
+      const recordingUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+
+      // create appointment entry
+      const appt = await Appointment.create({
+        doctor:      req.doctor._id,
+        patient:     patientId,
+        title,
+        date,
+        weight,
+        height,
+        recordingUrl
+      });
+
+      // transcribe & generate note
+      const transcript = await transcribeAudio(recordingUrl);
+      const consultNote = await generateConsultNote(transcript, req.doctor.template);
+
+      appt.transcript  = transcript;
+      appt.consultNote = consultNote;
+      appt.status      = 'Completed';
+      await appt.save();
+
+      res.json(appt);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+];
+
+// List upcoming & recent appointments
+export const listAppointments = async (req, res) => {
+  const now = new Date();
+  const threeDays = new Date(now);
+  threeDays.setDate(now.getDate() + 3);
+  const oneDayAgo = new Date(now);
+  oneDayAgo.setDate(now.getDate() - 1);
+  const appts = await Appointment.find({
+    doctor: req.doctor._id,
+    date: { $gte: oneDayAgo, $lte: threeDays }
+  }).populate('patient');
+  res.json(appts);
+};
+
+// Get single appointment
+export const getAppointment = async (req, res) => {
+  const appt = await Appointment.findById(req.params.id)
+    .populate('patient')
+    .populate('doctor', '-password');
+  if (!appt) return res.status(404).json({ message: 'Not found' });
+  res.json(appt);
+};
