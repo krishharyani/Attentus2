@@ -127,7 +127,7 @@ export default function HomeScreen() {
       
       {upcoming.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Upcoming Appointments ({upcoming.length})</Text>
+          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
           <FlatList 
             data={otherUpcoming} 
             keyExtractor={i => i._id} 

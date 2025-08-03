@@ -34,6 +34,7 @@ function ChatsStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ChatsList" component={ChatsScreen} />
       <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+      <Stack.Screen name="ConsultNoteView" component={ConsultNoteViewScreen} />
     </Stack.Navigator>
   );
 }

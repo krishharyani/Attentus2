@@ -187,11 +187,21 @@ export default function ChatDetailScreen() {
     // Extract consult note data if present
     let consultNoteData = null;
     if (hasConsultNote) {
+      console.log('Message content for consult note extraction:', item.content);
       const lines = item.content.split('\n');
+      console.log('Split lines:', lines);
+      
       const consultNoteLine = lines.find(line => line.includes('📋 Consult Note:'));
       const patientLine = lines.find(line => line.includes('Patient:'));
       const dateLine = lines.find(line => line.includes('Date:'));
       const appointmentIdLine = lines.find(line => line.includes('Appointment ID:'));
+      
+      console.log('Found lines:', {
+        consultNoteLine,
+        patientLine,
+        dateLine,
+        appointmentIdLine
+      });
       
       if (consultNoteLine && patientLine && dateLine && appointmentIdLine) {
         consultNoteData = {
@@ -201,6 +211,13 @@ export default function ChatDetailScreen() {
           appointmentId: appointmentIdLine.split('Appointment ID:')[1].trim()
         };
         console.log('Extracted consult note data:', consultNoteData);
+      } else {
+        console.error('Missing required lines for consult note extraction:', {
+          hasConsultNoteLine: !!consultNoteLine,
+          hasPatientLine: !!patientLine,
+          hasDateLine: !!dateLine,
+          hasAppointmentIdLine: !!appointmentIdLine
+        });
       }
     }
 
@@ -232,9 +249,22 @@ export default function ChatDetailScreen() {
               consultNote={consultNoteData}
               onPress={() => {
                 console.log('Navigating to ConsultNoteView with appointmentId:', consultNoteData.appointmentId);
-                navigation.navigate('ConsultNoteView', { 
-                  appointmentId: consultNoteData.appointmentId 
-                });
+                console.log('Consult note data:', consultNoteData);
+                
+                if (!consultNoteData.appointmentId) {
+                  console.error('No appointmentId found in consult note data');
+                  Alert.alert('Error', 'Could not open consult note - missing appointment ID');
+                  return;
+                }
+                
+                try {
+                  navigation.navigate('ConsultNoteView', { 
+                    appointmentId: consultNoteData.appointmentId 
+                  });
+                } catch (error) {
+                  console.error('Navigation error:', error);
+                  Alert.alert('Error', 'Failed to open consult note');
+                }
               }}
             />
           )}
