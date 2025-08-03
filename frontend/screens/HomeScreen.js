@@ -1,129 +1,197 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import client from '../api/client';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import api from '../api/client';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
   const [appointments, setAppointments] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
 
   const fetchAppointments = async () => {
     try {
-      const response = await client.get('/appointments');
+      const response = await api.get('/appointments');
+      console.log('All appointments:', response.data);
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     }
   };
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  // Refresh appointments when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchAppointments();
+    }, [])
+  );
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchAppointments();
-    setRefreshing(false);
-  };
+  // Filter appointments for next 24 hours and past 24 hours
+  const now = new Date();
+  const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const past24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  console.log('Current time:', now.toISOString());
+  console.log('Next 24 hours:', next24Hours.toISOString());
+  console.log('Past 24 hours:', past24Hours.toISOString());
+  
+  // Show all upcoming appointments (not just next 24 hours)
+  const upcoming = appointments
+    .filter(a => {
+      const appointmentDate = new Date(a.date);
+      const isUpcoming = appointmentDate.getTime() >= now.getTime();
+      console.log(`Appointment ${a.title}: ${appointmentDate.toISOString()}, isUpcoming: ${isUpcoming}, appointment time: ${appointmentDate.getTime()}, current time: ${now.getTime()}`);
+      return isUpcoming;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      console.log(`Sorting: ${a.title} (${dateA}) vs ${b.title} (${dateB})`);
+      return dateA - dateB; // Earliest first
+    });
+  
+  console.log('Upcoming appointments after sorting:', upcoming.map(a => ({ title: a.title, date: new Date(a.date).toISOString(), timestamp: new Date(a.date).getTime() })));
+  
+  // Next closest appointment (earliest upcoming)
+  const next = upcoming[0];
+  const otherUpcoming = upcoming.slice(1);
+  
+  // Show all past appointments (not just past 24 hours)
+  const recent = appointments
+    .filter(a => {
+      const appointmentDate = new Date(a.date);
+      const isRecent = appointmentDate.getTime() < now.getTime();
+      console.log(`Appointment ${a.title}: ${appointmentDate.toISOString()}, status: ${a.status}, isRecent: ${isRecent}`);
+      return isRecent;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Most recent first
 
-  const renderAppointment = ({ item }) => (
-    <TouchableOpacity 
+  console.log('Recent appointments:', recent);
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
       style={styles.appointmentCard}
-      onPress={() => navigation.navigate('AppointmentDetail', { appointment: item })}
+      onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: item._id })}
     >
-      <View style={styles.appointmentHeader}>
-        <Text style={styles.appointmentTitle}>{item.title}</Text>
-        <Text style={styles.appointmentDate}>
-          {new Date(item.date).toLocaleDateString()}
-        </Text>
-      </View>
-      
-      {item.patient && (
-        <View style={styles.patientInfo}>
-          <Text style={styles.patientName}>
-            {item.patient.firstName} {item.patient.lastName}
-          </Text>
-          <Text style={styles.patientDetails}>
-            {item.patient.sex}, {calculateAge(item.patient.dateOfBirth)} years
-            {item.weight && `, ${item.weight}kg`}
-          </Text>
-        </View>
-      )}
-      
-      {item.consultNote && (
-        <Text style={styles.consultNote} numberOfLines={2}>
-          {item.consultNote}
-        </Text>
-      )}
-      
+      <Text style={styles.appointmentTitle}>{item.title}</Text>
+      <Text style={styles.appointmentDate}>{new Date(item.date).toLocaleString()}</Text>
+      <Text style={styles.appointmentNote}>{item.consultNote?.split('\n')[0] || 'No notes yet'}</Text>
       <View style={styles.statusContainer}>
-        <Text style={[styles.status, styles[`status${item.status}`]]}>
+        <Text style={[
+          styles.statusText, 
+          { color: item.status === 'Completed' ? '#4CAF50' : '#FF9800' }
+        ]}>
           {item.status}
         </Text>
       </View>
     </TouchableOpacity>
   );
 
-  const calculateAge = (dateOfBirth) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Appointments</Text>
-      </View>
+    <View style={styles.container}>
+      {next && (
+        <TouchableOpacity
+          style={styles.nextAppointmentCard}
+          onPress={() => navigation.navigate('AppointmentDetail', { appointmentId: next._id })}
+        >
+          <Text style={styles.nextAppointmentTitle}>Next: {next.title}</Text>
+          <Text style={styles.nextAppointmentDate}>{new Date(next.date).toLocaleString()}</Text>
+          <Text style={styles.nextAppointmentStatus}>Status: {next.status}</Text>
+          <Text style={styles.nextAppointmentPatient}>
+            Patient: {next.patient?.firstName} {next.patient?.lastName}
+          </Text>
+        </TouchableOpacity>
+      )}
       
-      <FlatList
-        data={appointments}
-        renderItem={renderAppointment}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No appointments yet</Text>
-            <Text style={styles.emptySubtext}>Your upcoming and recent appointments will appear here</Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
+      {upcoming.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Upcoming Appointments ({upcoming.length})</Text>
+          <FlatList 
+            data={otherUpcoming} 
+            keyExtractor={i => i._id} 
+            renderItem={renderItem}
+            scrollEnabled={false}
+          />
+        </>
+      )}
+      
+      {recent.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Past Appointments ({recent.length})</Text>
+          <FlatList 
+            data={recent} 
+            keyExtractor={i => i._id} 
+            renderItem={renderItem}
+            scrollEnabled={false}
+          />
+        </>
+      )}
+      
+      {upcoming.length === 0 && recent.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No appointments found</Text>
+          <Text style={styles.emptySubtext}>Schedule new appointments to see them here</Text>
+          <Text style={styles.debugText}>Total appointments: {appointments.length}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
     backgroundColor: '#FCFFF7',
   },
-  header: {
-    padding: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  nextAppointmentCard: {
+    padding: 40,
+    backgroundColor: '#64B6AC',
+    borderRadius: 24,
+    marginTop: 40,
+    marginBottom: 32,
+    minHeight: 240,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 12,
   },
-  title: {
-    fontSize: 28,
+  nextAppointmentTitle: {
+    fontSize: 26,
+    color: 'white',
     fontWeight: 'bold',
-    color: '#64B6AC',
+    marginBottom: 12,
   },
-  list: {
-    padding: 20,
+  nextAppointmentDate: {
+    fontSize: 18,
+    color: 'white',
+    marginBottom: 8,
+  },
+  nextAppointmentStatus: {
+    fontSize: 16,
+    color: 'white',
+    opacity: 0.9,
+    marginBottom: 8,
+  },
+  nextAppointmentPatient: {
+    fontSize: 16,
+    color: 'white',
+    opacity: 0.9,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    color: '#64B6AC',
+    marginBottom: 8,
+    marginTop: 16,
+    fontWeight: '600',
   },
   appointmentCard: {
-    backgroundColor: 'white',
     padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 8,
+    backgroundColor: 'white',
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -133,60 +201,27 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  appointmentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   appointmentTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    color: '#64B6AC',
+    fontWeight: '500',
   },
   appointmentDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#BFE0DC',
+    marginTop: 4,
   },
-  patientInfo: {
-    marginBottom: 8,
-  },
-  patientName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#64B6AC',
-  },
-  patientDetails: {
+  appointmentNote: {
     fontSize: 14,
     color: '#666',
-  },
-  consultNote: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
-    marginBottom: 8,
+    marginTop: 4,
   },
   statusContainer: {
-    alignItems: 'flex-end',
+    marginTop: 8,
   },
-  status: {
+  statusText: {
     fontSize: 12,
     fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusPending: {
-    backgroundColor: '#FFF3CD',
-    color: '#856404',
-  },
-  statusTranscribed: {
-    backgroundColor: '#D1ECF1',
-    color: '#0C5460',
-  },
-  statusCompleted: {
-    backgroundColor: '#D4EDDA',
-    color: '#155724',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -202,5 +237,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
   },
 }); 

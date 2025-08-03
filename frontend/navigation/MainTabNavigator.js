@@ -1,13 +1,36 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
+import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import AddPatientScreen from '../screens/AddPatientScreen';
+import AddAppointmentScreen from '../screens/AddAppointmentScreen';
 import RecordAppointmentScreen from '../screens/RecordAppointmentScreen';
 import ChatsScreen from '../screens/ChatsScreen';
+import ChatDetailScreen from '../screens/ChatDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeList" component={HomeScreen} />
+      <Stack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function ChatsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ChatsList" component={ChatsScreen} />
+      <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function RecordTabButton({ children, onPress }) {
   return (
@@ -28,8 +51,9 @@ export default function MainTabNavigator() {
         tabBarShowLabel: false
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="AddPatient" component={AddPatientScreen} />
+      <Tab.Screen name="Schedule" component={AddAppointmentScreen} />
       <Tab.Screen 
         name="Record"
         component={RecordAppointmentScreen}
@@ -41,7 +65,7 @@ export default function MainTabNavigator() {
           )
         }}
       />
-      <Tab.Screen name="Chats" component={ChatsScreen} />
+      <Tab.Screen name="Chats" component={ChatsStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

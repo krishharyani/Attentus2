@@ -98,3 +98,21 @@ export const updateAppointment = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Delete/cancel appointment
+export const deleteAppointment = async (req, res) => {
+  try {
+    const appt = await Appointment.findById(req.params.id);
+    if (!appt) return res.status(404).json({ message: 'Appointment not found' });
+    
+    // Check if the appointment belongs to the current doctor
+    if (appt.doctor.toString() !== req.doctor._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to cancel this appointment' });
+    }
+    
+    await Appointment.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Appointment cancelled successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
