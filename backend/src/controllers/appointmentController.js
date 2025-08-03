@@ -29,7 +29,7 @@ export const recordAppointment = [
   async (req, res) => {
     try {
       const { weight, height } = req.body;
-      const appt = await Appointment.findById(req.params.id);
+      const appt = await Appointment.findById(req.params.id).populate('patient');
       if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
       // upload raw audio
@@ -37,11 +37,16 @@ export const recordAppointment = [
       const filePath = `recordings/${Date.now()}_${req.file.originalname}`;
       const file = bucket.file(filePath);
       await file.save(req.file.buffer, { contentType: req.file.mimetype });
+      
+      // Create GCS URI for transcription (gs:// format)
+      const gcsUri = `gs://${bucket.name}/${file.name}`;
       const recordingUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
 
       // transcription + AI note
-      const transcript  = await transcribeAudio(recordingUrl);
-      const consultNote = await generateConsultNote(transcript, req.doctor.template);
+      const transcript  = await transcribeAudio(gcsUri);
+      const doctorName = `${req.doctor.firstName} ${req.doctor.lastName}`;
+      const patientName = `${appt.patient.firstName} ${appt.patient.lastName}`;
+      const consultNote = await generateConsultNote(transcript, req.doctor.template, doctorName, patientName);
 
       // update appointment
       appt.recordingUrl = recordingUrl;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import AddPatientScreen from '../screens/AddPatientScreen';
@@ -10,6 +10,8 @@ import RecordAppointmentScreen from '../screens/RecordAppointmentScreen';
 import ChatsScreen from '../screens/ChatsScreen';
 import ChatDetailScreen from '../screens/ChatDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import PatientHistoryScreen from '../screens/PatientHistoryScreen';
+import PatientConsultNotesScreen from '../screens/PatientConsultNotesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -19,6 +21,8 @@ function HomeStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeList" component={HomeScreen} />
       <Stack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
+      <Stack.Screen name="PatientHistory" component={PatientHistoryScreen} />
+      <Stack.Screen name="PatientConsultNotes" component={PatientConsultNotesScreen} />
     </Stack.Navigator>
   );
 }
@@ -32,66 +36,68 @@ function ChatsStack() {
   );
 }
 
-function RecordTabButton({ children, onPress }) {
-  return (
-    <TouchableOpacity
-      style={styles.recordButton}
-      onPress={onPress}
-    >
-      {children}
-    </TouchableOpacity>
-  );
-}
+
 
 export default function MainTabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarShowLabel: false
-      }}
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconText;
+
+          if (route.name === 'Home') {
+            iconText = '🏠';
+          } else if (route.name === 'AddPatient') {
+            iconText = '👤+';
+          } else if (route.name === 'Schedule') {
+            iconText = '📅';
+          } else if (route.name === 'Record') {
+            iconText = '🎤';
+          } else if (route.name === 'Chats') {
+            iconText = '💬';
+          } else if (route.name === 'Profile') {
+            iconText = '👤';
+          }
+
+          return <Text style={{ fontSize: size, color: color }}>{iconText}</Text>;
+        },
+        tabBarActiveTintColor: '#64B6AC',
+        tabBarInactiveTintColor: 'gray',
+      })}
     >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="AddPatient" component={AddPatientScreen} />
-      <Tab.Screen name="Schedule" component={AddAppointmentScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeStack}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen 
+        name="AddPatient" 
+        component={AddPatientScreen}
+        options={{ tabBarLabel: 'Add Patient' }}
+      />
+      <Tab.Screen 
+        name="Schedule" 
+        component={AddAppointmentScreen}
+        options={{ tabBarLabel: 'Schedule' }}
+      />
       <Tab.Screen 
         name="Record"
         component={RecordAppointmentScreen}
-        options={{
-          tabBarButton: props => (
-            <RecordTabButton {...props}>
-              <Text style={styles.recordButtonText}>+</Text>
-            </RecordTabButton>
-          )
-        }}
+        options={{ tabBarLabel: 'Record' }}
       />
-      <Tab.Screen name="Chats" component={ChatsStack} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Chats" 
+        component={ChatsStack}
+        options={{ tabBarLabel: 'Chats' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  recordButton: {
-    position: 'absolute',
-    bottom: 16,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#64B6AC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  recordButtonText: {
-    color: 'white',
-    fontSize: 24,
-  },
-});
+

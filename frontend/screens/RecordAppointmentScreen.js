@@ -440,7 +440,7 @@ export default function RecordAppointmentScreen() {
                 value={consultNote}
                 onChangeText={setConsultNote}
                 multiline
-                numberOfLines={8}
+                scrollEnabled={true}
                 placeholder="Edit the generated consult note..."
               />
               
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#BFE0DC',
-    height: 200,
+    height: 400,
     textAlignVertical: 'top',
   },
   saveButton: {

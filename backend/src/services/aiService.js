@@ -1,8 +1,11 @@
 import { openai } from '../config/openai.js';
 
-export async function generateConsultNote(transcript, template) {
+export async function generateConsultNote(transcript, template, doctorName, patientName) {
   const prompt = `
 You are a medical scribe tasked with creating a comprehensive consultation note from a doctor-patient conversation transcript.
+
+DOCTOR: ${doctorName}
+PATIENT: ${patientName}
 
 TRANSCRIPT:
 ${transcript}

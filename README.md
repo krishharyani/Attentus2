@@ -42,6 +42,7 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 
 # Google Cloud Speech-to-Text
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google-speech-credentials.json
+GOOGLE_CLOUD_PROJECT="1012950639745"
 
 # JWT Authentication
 JWT_SECRET=your-jwt-secret-key-here
@@ -110,7 +111,18 @@ Place your service account JSON files in the `backend/credentials/` directory:
 - `firebase-admin.json` - Firebase Admin SDK credentials
 - `google-speech-credentials.json` - Google Cloud Speech-to-Text credentials
 
-### 3. Environment Configuration
+### 3. Enable Speech-to-Text API
+
+Before starting the backend, run:
+```bash
+npm run enable-api
+```
+
+This ensures the Speech-to-Text API is active in your GCP project.
+
+**Note:** If you don't have Google Cloud SDK installed, you can manually enable the Speech-to-Text API at: https://console.cloud.google.com/apis/library/speech.googleapis.com
+
+### 4. Environment Configuration
 
 1. Copy the environment variables from the section above
 2. Update the MongoDB connection string with your Atlas credentials
@@ -118,7 +130,7 @@ Place your service account JSON files in the `backend/credentials/` directory:
 4. Configure Firebase project settings
 5. Update the frontend API host to your local IP address
 
-### 4. Start the Application
+### 5. Start the Application
 
 #### Backend Server
 ```bash

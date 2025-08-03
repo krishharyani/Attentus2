@@ -1,13 +1,13 @@
 import fs from 'fs';
 import { speechClient } from '../config/speechClient.js';
 
-export async function transcribeAudio(gcsUri) {
+export async function transcribeAudio(uri) {
   try {
-    console.log('Starting transcription for:', gcsUri);
+    console.log('🔍 Transcribing from:', uri);
     
     // Configure diarization to 2 speakers (doctor and patient)
     const request = {
-      audio: { uri: gcsUri },
+      audio: { uri: uri },
       config: {
         encoding: 'MP3', // Updated to handle common audio formats
         sampleRateHertz: 44100, // Higher sample rate for better quality

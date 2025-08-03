@@ -87,6 +87,15 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.patientHistoryButton}
+          onPress={() => navigation.navigate('PatientHistory')}
+        >
+          <Text style={styles.patientHistoryButtonText}>Patient History</Text>
+        </TouchableOpacity>
+      </View>
+      
       {next && (
         <TouchableOpacity
           style={styles.nextAppointmentCard}
@@ -141,6 +150,23 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#FCFFF7',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  patientHistoryButton: {
+    backgroundColor: '#64B6AC',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  patientHistoryButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   nextAppointmentCard: {
     padding: 40,

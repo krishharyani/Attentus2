@@ -178,6 +178,7 @@ export default function AppointmentDetailScreen() {
                 value={editedNote}
                 onChangeText={setEditedNote}
                 style={styles.noteInput}
+                scrollEnabled={true}
                 placeholder="Enter consultation notes..."
               />
               <View style={styles.editButtons}>
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    minHeight: 120,
+    height: 400,
     textAlignVertical: 'top',
     marginBottom: 16,
   },
