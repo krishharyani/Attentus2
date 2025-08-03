@@ -196,7 +196,9 @@ export default function SignupScreen({ navigation }) {
         
         <TouchableOpacity 
           style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+        }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>

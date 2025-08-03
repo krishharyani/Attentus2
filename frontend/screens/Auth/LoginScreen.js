@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import BACKEND_URL from '../../api/client';
+import {BACKEND_URL} from '@env';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -70,7 +70,9 @@ export default function LoginScreen({ navigation }) {
           
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+            }}
           >
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>

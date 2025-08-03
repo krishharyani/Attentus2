@@ -1,23 +1,14 @@
 import React, { useContext } from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthContext } from '../context/AuthContext';
-
+import { NavigationContainer } from '@react-navigation/native';
 import AuthStack from './AuthStack';
 import MainTabNavigator from './MainTabNavigator';
-const Stack = createNativeStackNavigator();
+import { AuthContext } from '../context/AuthContext';
 
 export default function RootNavigator() {
-  const { token, loading } = useContext(AuthContext);
-
-  if (loading) return null;
-
+  const { token } = useContext(AuthContext);
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token ? (
-        <Stack.Screen name="Main" component={MainTabNavigator} />
-      ) : (
-        <Stack.Screen name="Auth" component={AuthStack} />
-      )}
-    </Stack.Navigator>
+    <NavigationContainer>
+      {token ? <MainTabNavigator /> : <AuthStack />}
+    </NavigationContainer>
   );
-} 
+}
