@@ -1,18 +1,18 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import AddPatientScreen from '../screens/AddPatientScreen';
 import RecordAppointmentScreen from '../screens/RecordAppointmentScreen';
 import ChatsScreen from '../screens/ChatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { TouchableOpacity, Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
 function RecordTabButton({ children, onPress }) {
   return (
     <TouchableOpacity
-      className="absolute bottom-4 w-16 h-16 rounded-full bg-primary items-center justify-center shadow-lg"
+      style={styles.recordButton}
       onPress={onPress}
     >
       {children}
@@ -36,7 +36,7 @@ export default function MainTabNavigator() {
         options={{
           tabBarButton: props => (
             <RecordTabButton {...props}>
-              <Text className="text-white text-2xl">+</Text>
+              <Text style={styles.recordButtonText}>+</Text>
             </RecordTabButton>
           )
         }}
@@ -46,3 +46,28 @@ export default function MainTabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  recordButton: {
+    position: 'absolute',
+    bottom: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#64B6AC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  recordButtonText: {
+    color: 'white',
+    fontSize: 24,
+  },
+});

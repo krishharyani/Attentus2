@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {BACKEND_URL} from '@env';
+import { AuthContext } from '../../context/AuthContext';
+
+const API_HOST = '192.168.68.121'; // replace with your LAN IP if different
+const BACKEND_URL = `http://${API_HOST}:3001`;
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { refreshAuth } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -27,7 +31,9 @@ export default function LoginScreen({ navigation }) {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('doctor', JSON.stringify(data.doctor));
       
-      // Navigate to main app (handled by RootNavigator)
+      // Refresh the auth context to trigger navigation
+      await refreshAuth();
+      
     } catch (error) {
       Alert.alert('Error', error.message || error?.message || 'Login failed');
     } finally {

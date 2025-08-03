@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import client from '../../api/client';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function SignupScreen({ navigation }) {
   const [step, setStep] = useState(1);
@@ -17,6 +18,7 @@ export default function SignupScreen({ navigation }) {
   const [recording, setRecording] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { refreshAuth } = useContext(AuthContext);
 
   const updateFormData = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -82,7 +84,9 @@ export default function SignupScreen({ navigation }) {
       await AsyncStorage.setItem('token', response.data.token);
       await AsyncStorage.setItem('doctor', JSON.stringify(response.data.doctor));
       
-      // Navigate to main app (handled by RootNavigator)
+      // Refresh the auth context to trigger navigation
+      await refreshAuth();
+      
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Signup failed');
     } finally {

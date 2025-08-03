@@ -1,26 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import client from '../api/client';
+import { AuthContext } from '../context/AuthContext';
 
 export default function ProfileScreen() {
   const [doctor, setDoctor] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { signOut } = useContext(AuthContext);
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
+    setIsProfileLoading(true);
+    setError(null);
     try {
       const response = await client.get('/doctors/me');
       setDoctor(response.data);
       setFormData(response.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setError(error.response?.data?.message || 'Failed to load profile');
+      // If it's an authentication error, logout the user
+      if (error.response?.status === 401) {
+        Alert.alert('Session Expired', 'Please login again');
+        await signOut();
+      }
+    } finally {
+      setIsProfileLoading(false);
     }
   };
 
@@ -52,8 +66,7 @@ export default function ProfileScreen() {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('doctor');
+            await signOut();
             // Navigation will be handled by RootNavigator
           },
         },
@@ -61,11 +74,55 @@ export default function ProfileScreen() {
     );
   };
 
-  if (!doctor) {
+  if (isProfileLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading profile...</Text>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Error: {error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={fetchProfile}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>No profile data found</Text>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -316,5 +373,17 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  retryButton: {
+    backgroundColor: '#64B6AC',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
 }); 

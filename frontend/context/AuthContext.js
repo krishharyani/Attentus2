@@ -9,23 +9,28 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadStoredAuth = async () => {
-      try {
-        const storedToken = await AsyncStorage.getItem('token');
-        const storedUser = await AsyncStorage.getItem('doctor');
-        if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (err) {
-        console.error('Error loading auth from storage', err);
-      } finally {
-        setLoading(false);
+  const loadStoredAuth = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('token');
+      const storedUser = await AsyncStorage.getItem('doctor');
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
       }
-    };
+    } catch (err) {
+      console.error('Error loading auth from storage', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadStoredAuth();
   }, []);
+
+  const refreshAuth = async () => {
+    await loadStoredAuth();
+  };
 
   const signIn = async ({ email, password }) => {
     const res = await api.post('/auth/login', { email, password });
@@ -53,7 +58,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut, refreshAuth }}>
       {children}
     </AuthContext.Provider>
   );
