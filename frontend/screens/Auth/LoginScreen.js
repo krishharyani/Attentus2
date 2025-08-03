@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../../context/AuthContext';
 
-const API_HOST = '192.168.68.121'; // replace with your LAN IP if different
+const API_HOST = '172.20.10.2'; // replace with your LAN IP if different
 const BACKEND_URL = `http://${API_HOST}:3001`;
 
 export default function LoginScreen({ navigation }) {
