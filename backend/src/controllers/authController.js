@@ -3,10 +3,10 @@ import jwt from 'jsonwebtoken';
 import Doctor from '../models/Doctor.js';
 import { firebaseAdmin } from '../config/firebase.js';
 
-// Signup: multipart form with fields name, email, password, profession, template and file field "voiceSample"
+// Signup: multipart form with fields firstName, lastName, email, password, profession, template and file field "voiceSample"
 export const signup = async (req, res) => {
   try {
-    const { name, email, password, profession, template } = req.body;
+    const { firstName, lastName, email, password, profession, template } = req.body;
     
     // at the top of the signup function
     let voiceProfileUrl = '';
@@ -20,7 +20,8 @@ export const signup = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const doctor = await Doctor.create({
-      name,
+      firstName,
+      lastName,
       email,
       profession,
       password: hashed,
@@ -29,7 +30,7 @@ export const signup = async (req, res) => {
     });
 
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ doctor: { id: doctor._id, name, email, profession, template, voiceProfileUrl }, token });
+    res.status(201).json({ doctor: { id: doctor._id, firstName, lastName, email, profession, template, voiceProfileUrl }, token });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -45,7 +46,7 @@ export const login = async (req, res) => {
     if (!match) throw new Error('Invalid credentials');
 
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ doctor: { id: doctor._id, name: doctor.name, email, profession: doctor.profession, template: doctor.template, voiceProfileUrl: doctor.voiceProfileUrl }, token });
+    res.json({ doctor: { id: doctor._id, firstName: doctor.firstName, lastName: doctor.lastName, email, profession: doctor.profession, template: doctor.template, voiceProfileUrl: doctor.voiceProfileUrl }, token });
   } catch (err) {
     res.status(401).json({ message: err.message });
   }

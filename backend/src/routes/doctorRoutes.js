@@ -11,6 +11,6 @@ router.use(protect);
 router.get('/me', getProfile);
 router.put('/me', updateProfile);
 router.post('/me/signature', upload.single('signature'), uploadSignature);
-router.get('/', protect, listDoctors);
+router.get('/', listDoctors);
 
 export default router;

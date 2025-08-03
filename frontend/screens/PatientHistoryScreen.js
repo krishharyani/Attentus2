@@ -23,6 +23,7 @@ export default function PatientHistoryScreen() {
     setIsLoading(true);
     try {
       const response = await api.get('/patients');
+      console.log('Patients fetched:', response.data);
       setPatients(response.data);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -83,6 +84,15 @@ export default function PatientHistoryScreen() {
         renderItem={renderPatientItem}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {isLoading ? 'Loading patients...' : 
+               searchQuery ? 'No patients found matching your search' : 
+               'No patients found. Add some patients first.'}
+            </Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -150,5 +160,14 @@ const styles = StyleSheet.create({
   patientContact: {
     fontSize: 14,
     color: '#666',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 }); 

@@ -6,8 +6,8 @@ export const getProfile = (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
-  const updates = (({ name, email, profession, template, signatureUrl }) => 
-    ({ name, email, profession, template, signatureUrl }))(req.body);
+  const updates = (({ firstName, lastName, email, profession, template, signatureUrl }) => 
+    ({ firstName, lastName, email, profession, template, signatureUrl }))(req.body);
   Object.assign(req.doctor, updates);
   await req.doctor.save();
   res.json(req.doctor);
@@ -41,7 +41,7 @@ export const uploadSignature = [
 // List all doctors for chat selection
 export const listDoctors = async (req, res) => {
   try {
-    const doctors = await Doctor.find().select('_id name email');
+    const doctors = await Doctor.find().select('_id firstName lastName name email profession');
     res.json(doctors);
   } catch (err) {
     res.status(500).json({ message: err.message });

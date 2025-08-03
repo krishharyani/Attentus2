@@ -1,23 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/client';
 
 export default function ChatsScreen() {
   const [chats, setChats] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation();
 
   useEffect(() => {
+    getCurrentUser();
     fetchChats();
   }, []);
+
+  useEffect(() => {
+    filterDoctors();
+  }, [searchQuery, doctors]);
+
+  const getCurrentUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('doctor');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id);
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error);
+    }
+  };
+
+  const filterDoctors = () => {
+    if (!searchQuery.trim()) {
+      setFilteredDoctors(doctors);
+      return;
+    }
+
+    const filtered = doctors.filter(doctor => {
+      // Handle all possible name fields
+      let fullName = '';
+      if (doctor.firstName && doctor.lastName) {
+        fullName = `${doctor.firstName} ${doctor.lastName}`.toLowerCase();
+      } else if (doctor.name) {
+        fullName = doctor.name.toLowerCase();
+      } else if (doctor.email) {
+        fullName = doctor.email.split('@')[0].toLowerCase();
+      }
+      
+      const profession = doctor.profession?.toLowerCase() || '';
+      const searchLower = searchQuery.toLowerCase();
+      
+      // Prioritize name search over profession search
+      return fullName.includes(searchLower) || profession.includes(searchLower);
+    });
+    setFilteredDoctors(filtered);
+  };
 
   const fetchChats = async () => {
     try {
       const response = await api.get('/chats');
+      console.log('Chats fetched:', response.data);
       setChats(response.data);
     } catch (error) {
       console.error('Error fetching chats:', error);
@@ -27,6 +75,7 @@ export default function ChatsScreen() {
   const fetchDoctors = async () => {
     try {
       const response = await api.get('/doctors');
+      console.log('Doctors fetched:', response.data);
       setDoctors(response.data);
     } catch (error) {
       console.error('Error fetching doctors:', error);
@@ -53,7 +102,7 @@ export default function ChatsScreen() {
 
   const renderChatItem = ({ item }) => {
     // Get the other participant's name (not the current user)
-    const otherParticipant = item.participants?.find(p => p._id !== 'current-user-id');
+    const otherParticipant = item.participants?.find(p => p._id !== currentUserId);
     const lastMessage = item.messages?.[item.messages.length - 1];
 
     return (
@@ -62,9 +111,19 @@ export default function ChatsScreen() {
         onPress={() => navigation.navigate('ChatDetail', { chatId: item._id })}
       >
         <View style={styles.chatHeader}>
-          <Text style={styles.chatName}>
-            {otherParticipant?.name || 'Unknown Doctor'}
-          </Text>
+                  <Text style={styles.chatName}>
+          {(() => {
+            if (otherParticipant?.firstName && otherParticipant?.lastName) {
+              return `${otherParticipant.firstName} ${otherParticipant.lastName}`;
+            } else if (otherParticipant?.name) {
+              return otherParticipant.name;
+            } else if (otherParticipant?.email) {
+              return otherParticipant.email.split('@')[0];
+            } else {
+              return 'Unknown Doctor';
+            }
+          })()}
+        </Text>
           <Text style={styles.chatTime}>
             {lastMessage ? new Date(lastMessage.timestamp).toLocaleDateString() : ''}
           </Text>
@@ -83,16 +142,31 @@ export default function ChatsScreen() {
     );
   };
 
-  const renderDoctorItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.doctorItem}
-      onPress={() => handleNewChat(item._id)}
-      disabled={isLoading}
-    >
-      <Text style={styles.doctorName}>{item.name}</Text>
-      <Text style={styles.doctorProfession}>{item.profession}</Text>
-    </TouchableOpacity>
-  );
+  const renderDoctorItem = ({ item }) => {
+    console.log('Rendering doctor item:', item);
+    // Check all possible name fields
+    let doctorName = 'Unknown Doctor';
+    if (item.firstName && item.lastName) {
+      doctorName = `${item.firstName} ${item.lastName}`;
+    } else if (item.name) {
+      doctorName = item.name;
+    } else if (item.email) {
+      doctorName = item.email.split('@')[0]; // Use email prefix as fallback
+    }
+    
+    return (
+      <TouchableOpacity
+        style={styles.doctorItem}
+        onPress={() => handleNewChat(item._id)}
+        disabled={isLoading}
+      >
+        <Text style={styles.doctorName}>
+          {doctorName}
+        </Text>
+        <Text style={styles.doctorProfession}>{item.profession || 'No profession'}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -135,11 +209,29 @@ export default function ChatsScreen() {
             </TouchableOpacity>
           </View>
           
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search doctors by name or profession..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          
           <FlatList
-            data={doctors}
+            data={filteredDoctors}
             renderItem={renderDoctorItem}
             keyExtractor={(item) => item._id}
             contentContainerStyle={styles.doctorList}
+            ListEmptyComponent={
+              <View style={styles.emptyDoctorContainer}>
+                <Text style={styles.emptyDoctorText}>
+                  {isLoading ? 'Loading doctors...' :
+                   searchQuery ? 'No doctors found matching your search' : 
+                   'No doctors available'}
+                </Text>
+              </View>
+            }
           />
         </SafeAreaView>
       </Modal>
@@ -290,5 +382,29 @@ const styles = StyleSheet.create({
   doctorProfession: {
     fontSize: 14,
     color: '#666',
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  searchInput: {
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  emptyDoctorContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyDoctorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 }); 

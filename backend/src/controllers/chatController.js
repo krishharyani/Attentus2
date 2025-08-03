@@ -14,7 +14,7 @@ export const createChat = async (req, res) => {
 // List all chats for this doctor
 export const getChats = async (req, res) => {
   const chats = await Chat.find({ participants: req.doctor._id })
-    .populate('participants', 'name email')
+    .populate('participants', 'firstName lastName name email')
     .sort('-updatedAt');
   res.json(chats);
 };
@@ -22,15 +22,15 @@ export const getChats = async (req, res) => {
 // Get single chat with messages
 export const getChatById = async (req, res) => {
   const chat = await Chat.findById(req.params.id)
-    .populate('participants', 'name email')
-    .populate('messages.sender', 'name');
+    .populate('participants', 'firstName lastName name email')
+    .populate('messages.sender', 'firstName lastName name');
   if (!chat) return res.status(404).json({ message: 'Chat not found' });
   res.json(chat);
 };
 
 // Send a message
 export const sendMessage = async (req, res) => {
-  const { content, patientId, appointmentId } = req.body;
+  const { content, patientId, appointmentId, consultNoteId } = req.body;
   const chat = await Chat.findById(req.params.id);
   if (!chat) return res.status(404).json({ message: 'Chat not found' });
 
@@ -38,7 +38,8 @@ export const sendMessage = async (req, res) => {
     sender: req.doctor._id,
     content,
     patient: patientId,
-    appointment: appointmentId
+    appointment: appointmentId,
+    consultNoteId: consultNoteId // Store the appointment ID for consult note links
   };
   chat.messages.push(msg);
   await chat.save();
