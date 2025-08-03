@@ -50,7 +50,9 @@ export const recordAppointment = [
       const recordingUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
 
       // transcription + AI note
+      console.log('Starting transcription process...');
       const transcript  = await transcribeAudio(gcsUri);
+      console.log('Transcription completed successfully');
       const doctorName = `${req.doctor.firstName} ${req.doctor.lastName}`;
       const patientName = `${appt.patient.firstName} ${appt.patient.lastName}`;
       

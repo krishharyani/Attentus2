@@ -4,6 +4,7 @@ import { speechClient } from '../config/speechClient.js';
 export async function transcribeAudio(uri) {
   try {
     console.log('🔍 Transcribing from:', uri);
+    console.log('🔍 Speech client initialized:', !!speechClient);
     
     // Configure diarization to 2 speakers (doctor and patient)
     const request = {
@@ -21,6 +22,8 @@ export async function transcribeAudio(uri) {
     };
 
     console.log('Sending transcription request...');
+    console.log('Request config:', JSON.stringify(request.config, null, 2));
+    
     const [operation] = await speechClient.longRunningRecognize(request);
     
     console.log('Waiting for transcription to complete...');
@@ -67,6 +70,24 @@ export async function transcribeAudio(uri) {
     return transcript.trim();
   } catch (error) {
     console.error('Error in transcription service:', error);
-    throw new Error(`Transcription failed: ${error.message}`);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      stack: error.stack
+    });
+    
+    // Provide more specific error messages based on error type
+    if (error.message.includes('EHOSTUNREACH') || error.message.includes('ENOTFOUND')) {
+      throw new Error(`Network connectivity issue: Cannot reach Google Speech-to-Text service. Please check your internet connection and try again. Original error: ${error.message}`);
+    } else if (error.message.includes('UNAUTHENTICATED')) {
+      throw new Error(`Authentication failed: Please check your Google Cloud credentials. Original error: ${error.message}`);
+    } else if (error.message.includes('PERMISSION_DENIED')) {
+      throw new Error(`Permission denied: Please check your Google Cloud project permissions. Original error: ${error.message}`);
+    } else if (error.message.includes('INVALID_ARGUMENT')) {
+      throw new Error(`Invalid audio format or configuration. Please check the audio file. Original error: ${error.message}`);
+    } else {
+      throw new Error(`Transcription failed: ${error.message}`);
+    }
   }
 }

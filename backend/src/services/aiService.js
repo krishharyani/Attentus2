@@ -24,6 +24,8 @@ APPOINTMENT INFORMATION:
 
 IMPORTANT: Use the provided patient information (age, sex, weight, height) in your consultation note when clinically relevant. Include these vital signs and demographics in the appropriate sections of your note.
 
+CRITICAL TEMPLATE RULE: Only use the exact sections and structure provided in the doctor's template. Do NOT add any sections that are not explicitly mentioned in the template. If the template is missing sections like "Vital Signs", "Assessment", "Plan", etc., leave them out entirely rather than creating them.
+
 TRANSCRIPT:
 ${transcript}
 
@@ -54,6 +56,9 @@ INSTRUCTIONS:
    - Follow the doctor's specific template structure
    - Use the exact format and sections provided
    - Maintain professional medical documentation standards
+   - **IMPORTANT**: Only include sections that are explicitly mentioned in the doctor's template
+   - If the template does not include certain sections (e.g., "Vital Signs", "Assessment", "Plan"), do NOT add them
+   - Leave any missing template sections blank rather than creating them
 
 5. **Completeness**:
    - Ensure all relevant information from the conversation is captured
