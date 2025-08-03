@@ -12,6 +12,7 @@ import ChatDetailScreen from '../screens/ChatDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import PatientHistoryScreen from '../screens/PatientHistoryScreen';
 import PatientConsultNotesScreen from '../screens/PatientConsultNotesScreen';
+import ConsultNoteViewScreen from '../screens/ConsultNoteViewScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -23,6 +24,7 @@ function HomeStack() {
       <Stack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} />
       <Stack.Screen name="PatientHistory" component={PatientHistoryScreen} />
       <Stack.Screen name="PatientConsultNotes" component={PatientConsultNotesScreen} />
+      <Stack.Screen name="ConsultNoteView" component={ConsultNoteViewScreen} />
     </Stack.Navigator>
   );
 }

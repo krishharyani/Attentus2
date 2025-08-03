@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Modal, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,8 +8,11 @@ import ConsultNoteComponent from '../components/ConsultNoteComponent';
 
 export default function ChatDetailScreen() {
   const route = useRoute();
-  const chatId = route.params?.chatId;
   const navigation = useNavigation();
+  
+  // Safe extraction of chatId with fallback
+  const chatId = route?.params?.chatId || null;
+  
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -21,6 +24,11 @@ export default function ChatDetailScreen() {
   const flatListRef = useRef(null);
 
   useEffect(() => {
+    if (!chatId) {
+      console.error('No chatId provided');
+      Alert.alert('Error', 'No chat ID provided');
+      return;
+    }
     getCurrentUser();
     fetchChat();
   }, [chatId]);
@@ -28,9 +36,12 @@ export default function ChatDetailScreen() {
   const getCurrentUser = async () => {
     try {
       const userData = await AsyncStorage.getItem('doctor');
+      console.log('User data from AsyncStorage:', userData);
       if (userData) {
         const user = JSON.parse(userData);
+        console.log('Parsed user object:', user);
         setCurrentUserId(user.id);
+        console.log('Set current user ID to:', user.id);
       }
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -85,18 +96,25 @@ export default function ChatDetailScreen() {
 
   const fetchChat = async () => {
     try {
+      console.log('Fetching chat with ID:', chatId);
       const response = await api.get(`/chats/${chatId}`);
       console.log('Chat detail fetched:', response.data);
       console.log('Current user ID:', currentUserId);
+      console.log('Messages from response:', response.data.messages);
       setChat(response.data);
       setMessages(response.data.messages || []);
     } catch (error) {
       console.error('Error fetching chat:', error);
+      console.error('Error response:', error.response);
+      Alert.alert('Error', 'Failed to load chat');
     }
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
+
+    console.log('Sending message to chatId:', chatId);
+    console.log('Message content:', newMessage.trim());
 
     setIsLoading(true);
     try {
@@ -110,12 +128,22 @@ export default function ChatDetailScreen() {
         }
       }
 
+      console.log('Making API call to:', `/chats/${chatId}/message`);
+      console.log('Request payload:', {
+        content: newMessage.trim(),
+        consultNoteId: consultNoteId
+      });
+
       const response = await api.post(`/chats/${chatId}/message`, {
         content: newMessage.trim(),
         consultNoteId: consultNoteId
       });
       
-      setMessages(prev => [...prev, response.data]);
+      console.log('Message response:', response.data);
+      
+      // Update the chat and messages with the new data
+      setChat(response.data);
+      setMessages(response.data.messages || []);
       setNewMessage('');
       setSelectedConsultNote(null);
       
@@ -125,13 +153,33 @@ export default function ChatDetailScreen() {
       }, 100);
     } catch (error) {
       console.error('Error sending message:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      Alert.alert('Error', 'Failed to send message');
     } finally {
       setIsLoading(false);
     }
   };
 
   const renderMessage = ({ item }) => {
-    const isOwnMessage = item.sender?._id === currentUserId;
+    console.log('Rendering message item:', item);
+    console.log('Current user ID:', currentUserId, 'type:', typeof currentUserId);
+    console.log('Message sender ID:', item.sender?._id, 'type:', typeof item.sender?._id);
+    
+    // Convert both to strings for comparison
+    const senderId = item.sender?._id?.toString();
+    const userId = currentUserId?.toString();
+    const isOwnMessage = senderId === userId;
+    
+    console.log('Sender ID (string):', senderId);
+    console.log('User ID (string):', userId);
+    console.log('Is own message:', isOwnMessage);
+
+    // Safety check for content
+    if (!item.content) {
+      console.warn('Message item has no content:', item);
+      return null;
+    }
 
     // Check if message contains a consult note
     const hasConsultNote = item.content.includes('📋 Consult Note:');
@@ -152,6 +200,7 @@ export default function ChatDetailScreen() {
           date: dateLine.split('Date:')[1].trim(),
           appointmentId: appointmentIdLine.split('Appointment ID:')[1].trim()
         };
+        console.log('Extracted consult note data:', consultNoteData);
       }
     }
 
@@ -182,7 +231,8 @@ export default function ChatDetailScreen() {
             <ConsultNoteComponent
               consultNote={consultNoteData}
               onPress={() => {
-                navigation.navigate('AppointmentDetail', { 
+                console.log('Navigating to ConsultNoteView with appointmentId:', consultNoteData.appointmentId);
+                navigation.navigate('ConsultNoteView', { 
                   appointmentId: consultNoteData.appointmentId 
                 });
               }}
@@ -221,8 +271,21 @@ export default function ChatDetailScreen() {
     }
   };
 
+  // Early return if no chatId
+  if (!chatId) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FCFFF7" />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Chat not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FCFFF7" />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{getOtherParticipantName()}</Text>
       </View>
@@ -280,7 +343,7 @@ export default function ChatDetailScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <SafeAreaView style={styles.modalContainer} edges={['top', 'left', 'right']}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Consult Note</Text>
             <TouchableOpacity
@@ -548,6 +611,17 @@ const styles = StyleSheet.create({
   },
   emptyModalText: {
     fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FCFFF7',
+  },
+  errorText: {
+    fontSize: 18,
     color: '#666',
     textAlign: 'center',
   },

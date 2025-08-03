@@ -9,7 +9,8 @@ import { AuthContext } from '../../context/AuthContext';
 export default function SignupScreen({ navigation }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     profession: '',
     password: '',
@@ -52,7 +53,7 @@ export default function SignupScreen({ navigation }) {
   };
 
   const handleSignup = async () => {
-    if (!formData.name || !formData.email || !formData.profession || !formData.password || !formData.template) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.profession || !formData.password || !formData.template) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -60,7 +61,8 @@ export default function SignupScreen({ navigation }) {
     setIsLoading(true);
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('profession', formData.profession);
       formDataToSend.append('password', formData.password);
@@ -88,6 +90,15 @@ export default function SignupScreen({ navigation }) {
       await refreshAuth();
       
     } catch (error) {
+      console.log('Signup error:', error);
+      console.log('Error response:', error.response?.data);
+      console.log('Form data being sent:', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        profession: formData.profession,
+        template: formData.template
+      });
       Alert.alert('Error', error.response?.data?.message || 'Signup failed');
     } finally {
       setIsLoading(false);
@@ -99,9 +110,15 @@ export default function SignupScreen({ navigation }) {
       <Text style={styles.stepTitle}>Basic Information</Text>
       <TextInput
         style={styles.input}
-        placeholder="Full Name"
-        value={formData.name}
-        onChangeText={(value) => updateFormData('name', value)}
+        placeholder="First Name"
+        value={formData.firstName}
+        onChangeText={(value) => updateFormData('firstName', value)}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Last Name"
+        value={formData.lastName}
+        onChangeText={(value) => updateFormData('lastName', value)}
       />
       <TextInput
         style={styles.input}

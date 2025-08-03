@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
+import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/client';
@@ -24,6 +25,8 @@ export default function RecordAppointmentScreen() {
   const [consultNote, setConsultNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadedAudio, setUploadedAudio] = useState(null);
+  const [audioSource, setAudioSource] = useState(null); // 'record' or 'upload'
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -88,6 +91,23 @@ export default function RecordAppointmentScreen() {
     setHeight(appointment.height?.toString() || '');
     setShowAppointmentList(false);
     setSearchText(`${appointment.title} - ${new Date(appointment.date).toLocaleDateString()}`);
+    
+    // Clear any existing audio when selecting a new appointment
+    if (recording) {
+      clearInterval(recording._interval);
+      setRecording(null);
+    }
+    if (sound) {
+      sound.unloadAsync();
+      setSound(null);
+    }
+    setUploadedAudio(null);
+    setAudioSource(null);
+    setIsRecording(false);
+    setRecordingTime(0);
+    setPlaybackPosition(0);
+    setPlaybackDuration(0);
+    setIsPlaying(false);
   };
 
   const startRecording = async () => {
@@ -104,6 +124,10 @@ export default function RecordAppointmentScreen() {
       setRecording(recording);
       setIsRecording(true);
       setRecordingTime(0);
+      setAudioSource('record');
+      
+      // Clear any uploaded audio
+      setUploadedAudio(null);
       
       // Start timer
       const interval = setInterval(() => {
@@ -114,6 +138,37 @@ export default function RecordAppointmentScreen() {
       recording._interval = interval;
     } catch (err) {
       Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const uploadAudio = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'audio/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const file = result.assets[0];
+      setUploadedAudio(file);
+      setAudioSource('upload');
+      
+      // Clear any recording
+      if (recording) {
+        clearInterval(recording._interval);
+        await recording.stopAndUnloadAsync();
+        setRecording(null);
+      }
+      setIsRecording(false);
+      setRecordingTime(0);
+      
+      Alert.alert('Success', 'Audio file uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      Alert.alert('Error', 'Failed to upload audio file');
     }
   };
 
@@ -194,8 +249,8 @@ export default function RecordAppointmentScreen() {
       Alert.alert('Error', 'Please select an appointment');
       return;
     }
-    if (!recording) {
-      Alert.alert('Error', 'Please record audio first');
+    if (!recording && !uploadedAudio) {
+      Alert.alert('Error', 'Please record audio or upload an audio file first');
       return;
     }
 
@@ -208,13 +263,29 @@ export default function RecordAppointmentScreen() {
       }
 
       const formData = new FormData();
-      formData.append('audio', {
-        uri: recording,
-        type: 'audio/m4a',
-        name: 'recording.m4a',
-      });
-      formData.append('weight', weight);
-      formData.append('height', height);
+      
+      // Handle both recorded and uploaded audio
+      if (audioSource === 'record' && recording) {
+        formData.append('audio', {
+          uri: recording,
+          type: 'audio/m4a',
+          name: 'recording.m4a',
+        });
+      } else if (audioSource === 'upload' && uploadedAudio) {
+        formData.append('audio', {
+          uri: uploadedAudio.uri,
+          type: uploadedAudio.mimeType || 'audio/m4a',
+          name: uploadedAudio.name || 'uploaded_audio.m4a',
+        });
+      }
+      
+      // Only append weight and height if they have valid values
+      if (weight && weight.trim() !== '') {
+        formData.append('weight', weight);
+      }
+      if (height && height.trim() !== '') {
+        formData.append('height', height);
+      }
 
       console.log('Submitting recording for appointment:', selectedAppointment._id);
       console.log('Recording URI:', recording);
@@ -375,14 +446,29 @@ export default function RecordAppointmentScreen() {
           />
 
           <View style={styles.recordingSection}>
-            <TouchableOpacity
-              style={[styles.recordButton, isRecording && styles.recordingButton]}
-              onPress={isRecording ? stopRecording : startRecording}
-            >
-              <Text style={styles.recordButtonText}>
-                {isRecording ? '⏹️' : '🎤'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Audio Input</Text>
+            
+            <View style={styles.audioOptions}>
+              <TouchableOpacity
+                style={[styles.recordButton, isRecording && styles.recordingButton]}
+                onPress={isRecording ? stopRecording : startRecording}
+              >
+                <Text style={styles.recordButtonText}>
+                  {isRecording ? '⏹️' : '🎤'}
+                </Text>
+                <Text style={styles.recordButtonLabel}>Record</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.uploadButton, uploadedAudio && styles.uploadedButton]}
+                onPress={uploadAudio}
+              >
+                <Text style={styles.uploadButtonText}>
+                  📁
+                </Text>
+                <Text style={styles.uploadButtonLabel}>Upload</Text>
+              </TouchableOpacity>
+            </View>
             
             {isRecording && (
               <Text style={styles.recordingTime}>
@@ -420,15 +506,25 @@ export default function RecordAppointmentScreen() {
                 </View>
               </View>
             )}
+            
+            {uploadedAudio && (
+              <View style={styles.uploadedSection}>
+                <Text style={styles.uploadedStatus}>✓ Audio file uploaded</Text>
+                <Text style={styles.uploadedFileName}>{uploadedAudio.name}</Text>
+                <Text style={styles.uploadedFileSize}>
+                  Size: {(uploadedAudio.size / 1024 / 1024).toFixed(2)} MB
+                </Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity
-            style={[styles.submitButton, (!selectedAppointment || !recording) && styles.disabledButton]}
+            style={[styles.submitButton, (!selectedAppointment || (!recording && !uploadedAudio)) && styles.disabledButton]}
             onPress={handleSubmit}
-            disabled={!selectedAppointment || !recording || isSubmitting}
+            disabled={!selectedAppointment || (!recording && !uploadedAudio) || isSubmitting}
           >
             <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Processing...' : 'Submit Recording'}
+              {isSubmitting ? 'Processing...' : 'Submit Audio'}
             </Text>
           </TouchableOpacity>
 
@@ -593,6 +689,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 20,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  audioOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
   recordButton: {
     width: 80,
     height: 80,
@@ -607,6 +715,33 @@ const styles = StyleSheet.create({
   },
   recordButtonText: {
     fontSize: 32,
+  },
+  recordButtonLabel: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  uploadButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#64B6AC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  uploadedButton: {
+    backgroundColor: '#4CAF50',
+  },
+  uploadButtonText: {
+    fontSize: 32,
+  },
+  uploadButtonLabel: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '600',
+    marginTop: 4,
   },
   recordingTime: {
     fontSize: 18,
@@ -663,6 +798,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '600',
+  },
+  uploadedSection: {
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  uploadedStatus: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  uploadedFileName: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  uploadedFileSize: {
+    fontSize: 12,
+    color: '#666',
   },
   submitButton: {
     backgroundColor: '#64B6AC',

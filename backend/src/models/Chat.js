@@ -5,7 +5,8 @@ const messageSchema = new mongoose.Schema({
   content:     { type: String, required: true },
   timestamp:   { type: Date, default: Date.now },
   patient:     { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },
-  appointment: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' }
+  appointment: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' },
+  consultNoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' }
 });
 
 const chatSchema = new mongoose.Schema({

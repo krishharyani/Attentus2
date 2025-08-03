@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import api from '../api/client';
 
@@ -73,7 +74,21 @@ export default function HomeScreen() {
     >
       <Text style={styles.appointmentTitle}>{item.title}</Text>
       <Text style={styles.appointmentDate}>{new Date(item.date).toLocaleString()}</Text>
-      <Text style={styles.appointmentNote}>{item.consultNote?.split('\n')[0] || 'No notes yet'}</Text>
+      
+      {item.consultNote && item.consultNote.trim().length > 0 ? (
+        <TouchableOpacity
+          style={styles.consultNotePreview}
+          onPress={() => navigation.navigate('ConsultNoteView', { appointmentId: item._id })}
+        >
+          <Text style={styles.consultNotePreviewText} numberOfLines={2}>
+            📋 {item.consultNote.split('\n')[0]}
+          </Text>
+          <Text style={styles.consultNoteTapText}>Tap to view full consult note</Text>
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.appointmentNote}>No notes yet</Text>
+      )}
+      
       <View style={styles.statusContainer}>
         <Text style={[
           styles.statusText, 
@@ -86,7 +101,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.patientHistoryButton}
@@ -141,7 +156,7 @@ export default function HomeScreen() {
           <Text style={styles.debugText}>Total appointments: {appointments.length}</Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -241,6 +256,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  consultNotePreview: {
+    backgroundColor: 'rgba(100, 182, 172, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#64B6AC',
+  },
+  consultNotePreviewText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 18,
+  },
+  consultNoteTapText: {
+    fontSize: 12,
+    color: '#64B6AC',
+    marginTop: 4,
+    fontWeight: '500',
   },
   statusContainer: {
     marginTop: 8,

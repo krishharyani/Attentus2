@@ -19,6 +19,11 @@ export default function AppointmentDetailScreen() {
   const fetchAppointment = async () => {
     try {
       const response = await api.get(`/appointments/${appointmentId}`);
+      console.log('Fetched appointment data:', response.data);
+      console.log('Appointment weight:', response.data.weight, 'type:', typeof response.data.weight);
+      console.log('Appointment height:', response.data.height, 'type:', typeof response.data.height);
+      console.log('Patient weight:', response.data.patient?.weight, 'type:', typeof response.data.patient?.weight);
+      console.log('Patient height:', response.data.patient?.height, 'type:', typeof response.data.patient?.height);
       setAppointment(response.data);
       setEditedNote(response.data.consultNote || '');
     } catch (error) {
@@ -118,11 +123,11 @@ export default function AppointmentDetailScreen() {
             </Text>
             <Text style={styles.infoText}>
               <Text style={styles.label}>Weight: </Text>
-              {appointment.weight ? `${appointment.weight} kg` : 'N/A'}
+              {appointment.patient?.weight ? `${appointment.patient.weight} kg` : 'N/A'}
             </Text>
             <Text style={styles.infoText}>
               <Text style={styles.label}>Height: </Text>
-              {appointment.height ? `${appointment.height} cm` : 'N/A'}
+              {appointment.patient?.height ? `${appointment.patient.height} cm` : 'N/A'}
             </Text>
           </View>
         </View>
@@ -132,7 +137,9 @@ export default function AppointmentDetailScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoText}>
               <Text style={styles.label}>Name: </Text>
-              {appointment.doctor?.name || 'N/A'}
+              {appointment.doctor?.firstName && appointment.doctor?.lastName 
+                ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}`
+                : appointment.doctor?.name || 'N/A'}
             </Text>
             <Text style={styles.infoText}>
               <Text style={styles.label}>Email: </Text>
@@ -159,16 +166,36 @@ export default function AppointmentDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Consultation Note</Text>
-          {!editing ? (
+          {appointment.consultNote && appointment.consultNote.trim().length > 0 ? (
             <View style={styles.noteContainer}>
-              <Text style={styles.noteText}>
-                {appointment.consultNote || 'No notes yet'}
-              </Text>
+              <View style={styles.notePreview}>
+                <Text style={styles.notePreviewText} numberOfLines={3}>
+                  {appointment.consultNote}
+                </Text>
+              </View>
+              <View style={styles.noteButtons}>
+                <TouchableOpacity
+                  style={styles.viewFullButton}
+                  onPress={() => navigation.navigate('ConsultNoteView', { appointmentId: appointment._id })}
+                >
+                  <Text style={styles.viewFullButtonText}>View Full Note</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => setEditing(true)}
+                >
+                  <Text style={styles.editButtonText}>Edit Note</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : !editing ? (
+            <View style={styles.noteContainer}>
+              <Text style={styles.noteText}>No notes yet</Text>
               <TouchableOpacity
                 style={styles.editButton}
                 onPress={() => setEditing(true)}
               >
-                <Text style={styles.editButtonText}>Edit Note</Text>
+                <Text style={styles.editButtonText}>Add Note</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -340,6 +367,37 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 24,
     marginBottom: 16,
+  },
+  notePreview: {
+    backgroundColor: 'rgba(100, 182, 172, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#64B6AC',
+  },
+  notePreviewText: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 22,
+  },
+  noteButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  viewFullButton: {
+    backgroundColor: '#64B6AC',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  viewFullButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   editButton: {
     backgroundColor: '#64B6AC',

@@ -6,6 +6,7 @@ import { firebaseAdmin } from '../config/firebase.js';
 // Signup: multipart form with fields firstName, lastName, email, password, profession, template and file field "voiceSample"
 export const signup = async (req, res) => {
   try {
+    console.log('Signup request body:', req.body);
     const { firstName, lastName, email, password, profession, template } = req.body;
     
     // at the top of the signup function
@@ -32,6 +33,7 @@ export const signup = async (req, res) => {
     const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ doctor: { id: doctor._id, firstName, lastName, email, profession, template, voiceProfileUrl }, token });
   } catch (err) {
+    console.log('Signup error:', err);
     res.status(400).json({ message: err.message });
   }
 };

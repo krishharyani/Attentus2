@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
-import { scheduleAppointment, listAppointments, getAppointment, recordAppointment, updateAppointment, deleteAppointment } from '../controllers/appointmentController.js';
+import { scheduleAppointment, listAppointments, getAllAppointments, getAppointment, recordAppointment, updateAppointment, deleteAppointment } from '../controllers/appointmentController.js';
 
 const router = express.Router();
 router.use(protect);
@@ -9,7 +9,7 @@ router.use(protect);
 router.post('/', scheduleAppointment);
 
 // 2) List appointments
-router.get('/', listAppointments);
+router.get('/', getAllAppointments);
 
 // 3) Record & generate notes on an existing appointment
 router.post('/:id/record', recordAppointment);

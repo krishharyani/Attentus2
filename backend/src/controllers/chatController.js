@@ -30,18 +30,44 @@ export const getChatById = async (req, res) => {
 
 // Send a message
 export const sendMessage = async (req, res) => {
-  const { content, patientId, appointmentId, consultNoteId } = req.body;
-  const chat = await Chat.findById(req.params.id);
-  if (!chat) return res.status(404).json({ message: 'Chat not found' });
+  try {
+    console.log('Send message request:', {
+      chatId: req.params.id,
+      body: req.body,
+      doctorId: req.doctor._id
+    });
 
-  const msg = {
-    sender: req.doctor._id,
-    content,
-    patient: patientId,
-    appointment: appointmentId,
-    consultNoteId: consultNoteId // Store the appointment ID for consult note links
-  };
-  chat.messages.push(msg);
-  await chat.save();
-  res.json(chat);
+    const { content, patientId, appointmentId, consultNoteId } = req.body;
+    const chat = await Chat.findById(req.params.id);
+    
+    if (!chat) {
+      console.log('Chat not found for ID:', req.params.id);
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    console.log('Found chat:', chat._id);
+
+    const msg = {
+      sender: req.doctor._id,
+      content,
+      patient: patientId,
+      appointment: appointmentId,
+      consultNoteId: consultNoteId // Store the appointment ID for consult note links
+    };
+
+    console.log('Adding message:', msg);
+    chat.messages.push(msg);
+    await chat.save();
+    console.log('Message saved successfully');
+    
+    // Populate the sender information before sending response
+    const populatedChat = await Chat.findById(chat._id)
+      .populate('participants', 'firstName lastName name email')
+      .populate('messages.sender', 'firstName lastName name');
+    
+    res.json(populatedChat);
+  } catch (error) {
+    console.error('Error in sendMessage:', error);
+    res.status(500).json({ message: error.message });
+  }
 };

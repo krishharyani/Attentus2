@@ -125,7 +125,7 @@ export default function ProfileScreen() {
 
   if (!doctor) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView 
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -156,12 +156,20 @@ export default function ProfileScreen() {
               <View style={styles.editForm}>
                 <Text style={styles.sectionTitle}>Edit Profile</Text>
                 
-                <TextInput
-                  style={styles.input}
-                  placeholder="Name"
-                  value={formData.name}
-                  onChangeText={(value) => updateFormData('name', value)}
-                />
+                <View style={styles.nameRow}>
+                  <TextInput
+                    style={[styles.input, styles.nameInput]}
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChangeText={(value) => updateFormData('firstName', value)}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.nameInput]}
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChangeText={(value) => updateFormData('lastName', value)}
+                  />
+                </View>
                 
                 <TextInput
                   style={styles.input}
@@ -207,7 +215,7 @@ export default function ProfileScreen() {
                 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Name:</Text>
-                  <Text style={styles.infoValue}>{doctor.name}</Text>
+                  <Text style={styles.infoValue}>{doctor.firstName} {doctor.lastName}</Text>
                 </View>
                 
                 <View style={styles.infoRow}>
@@ -356,6 +364,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#BFE0DC',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  nameInput: {
+    flex: 1,
   },
   textArea: {
     height: 120,

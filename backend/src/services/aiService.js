@@ -1,11 +1,28 @@
 import { openai } from '../config/openai.js';
 
-export async function generateConsultNote(transcript, template, doctorName, patientName) {
+export async function generateConsultNote(transcript, template, doctorName, patientName, patientInfo, appointmentInfo) {
+  console.log('Generating consult note with patient info:', patientInfo);
+  console.log('Generating consult note with appointment info:', appointmentInfo);
+  
   const prompt = `
 You are a medical scribe tasked with creating a comprehensive consultation note from a doctor-patient conversation transcript.
 
 DOCTOR: ${doctorName}
 PATIENT: ${patientName}
+
+PATIENT INFORMATION:
+- Sex: ${patientInfo.sex || 'Not specified'}
+- Weight: ${patientInfo.weight ? `${patientInfo.weight} kg` : 'Not recorded'}
+- Height: ${patientInfo.height ? `${patientInfo.height} cm` : 'Not recorded'}
+- Age: ${patientInfo.age ? `${patientInfo.age} years` : 'Not specified'}
+- Date of Birth: ${patientInfo.dateOfBirth ? new Date(patientInfo.dateOfBirth).toLocaleDateString() : 'Not specified'}
+
+APPOINTMENT INFORMATION:
+- Date: ${appointmentInfo.date}
+- Time: ${appointmentInfo.time}
+- Type: ${appointmentInfo.title || 'Consultation'}
+
+IMPORTANT: Use the provided patient information (age, sex, weight, height) in your consultation note when clinically relevant. Include these vital signs and demographics in the appropriate sections of your note.
 
 TRANSCRIPT:
 ${transcript}
@@ -40,9 +57,10 @@ INSTRUCTIONS:
 
 5. **Completeness**:
    - Ensure all relevant information from the conversation is captured
-   - Include patient demographics if mentioned
+   - Include patient demographics and vital signs (use provided weight, height, age, sex)
    - Document any referrals or specialist consultations discussed
    - Note any patient education provided
+   - Reference the patient's age, sex, weight, and height when clinically relevant
 
 6. **Clarity and Organization**:
    - Write in clear, professional medical language

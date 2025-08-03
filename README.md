@@ -2,7 +2,7 @@
 
 **AI-powered medical consult note automation for doctors**
 
-Attentus is a comprehensive mobile application that helps doctors automate the creation of medical consultation notes using AI. The app combines React Native (Expo) frontend with a Node.js/Express backend, featuring real-time speech-to-text transcription, AI-powered note generation, and secure patient management. Built with modern technologies including MongoDB for data persistence, Firebase for authentication and file storage, Google Cloud Speech-to-Text for audio processing, and OpenAI for intelligent note generation.
+Attentus is a comprehensive mobile application that helps doctors automate the creation of medical consultation notes using AI. The app combines React Native (Expo) frontend with a Node.js/Express backend, featuring real-time speech-to-text transcription, AI-powered note generation, secure patient management, and inter-doctor communication. Built with modern technologies including MongoDB for data persistence, Firebase for authentication and file storage, Google Cloud Speech-to-Text for audio processing, and OpenAI for intelligent note generation.
 
 ## 🏗️ Architecture
 
@@ -27,11 +27,12 @@ Before setting up the project, ensure you have the following installed and confi
 - **Google Cloud project** with Speech-to-Text API enabled
 - **Firebase project** for authentication and file storage
 - **OpenAI API account** for AI-powered note generation
+- **Google Cloud SDK** (optional, for API management)
 
 ## 🔧 Environment Configuration
 
-### Root `.env` (Backend)
-Create a `.env` file in the root directory with the following variables:
+### Backend `.env`
+Create a `.env` file in the `backend/` directory with the following variables:
 
 ```env
 # MongoDB Connection
@@ -42,20 +43,13 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 
 # Google Cloud Speech-to-Text
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google-speech-credentials.json
-GOOGLE_CLOUD_PROJECT="1012950639745"
+GOOGLE_CLOUD_PROJECT="your-project-id"
 
 # JWT Authentication
 JWT_SECRET=your-jwt-secret-key-here
 
 # Firebase Configuration
-FIREBASE_API_KEY=your-firebase-api-key
-FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-FIREBASE_APP_ID=your-app-id
-FIREBASE_MEASUREMENT_ID=your-measurement-id
-FIREBASE_ADMIN_CREDENTIALS=/path/to/your/firebase-admin.json
 ```
 
 ### Frontend Configuration
@@ -63,7 +57,7 @@ Update the API host in `frontend/api/client.js`:
 
 ```javascript
 const API_HOST = '192.168.68.121'; // Replace with your LAN IP address
-const api = axios.create({ baseURL: `http://${API_HOST}:3001/api` });
+const BACKEND_URL = `http://${API_HOST}:3001`;
 ```
 
 ## 📁 Project Structure
@@ -72,6 +66,8 @@ const api = axios.create({ baseURL: `http://${API_HOST}:3001/api` });
 Attentus/
 ├── frontend/                 # React Native Expo app
 │   ├── screens/             # App screens
+│   │   ├── Auth/           # Authentication screens
+│   │   └── components/     # Reusable components
 │   ├── navigation/          # Navigation configuration
 │   ├── context/             # React Context providers
 │   ├── api/                 # API client configuration
@@ -84,7 +80,8 @@ Attentus/
 │   │   ├── middlewares/     # Custom middlewares
 │   │   ├── services/        # Business logic services
 │   │   └── config/          # Configuration files
-│   └── credentials/         # Service account files
+│   ├── credentials/         # Service account files
+│   └── scripts/             # Utility scripts
 └── README.md
 ```
 
@@ -108,8 +105,7 @@ npm install
 ### 2. Service Account Setup
 
 Place your service account JSON files in the `backend/credentials/` directory:
-- `firebase-admin.json` - Firebase Admin SDK credentials
-- `google-speech-credentials.json` - Google Cloud Speech-to-Text credentials
+- `firebase-admin.json` - Firebase Admin SDK credentials (required for file storage and authentication)
 
 ### 3. Enable Speech-to-Text API
 
@@ -129,6 +125,7 @@ This ensures the Speech-to-Text API is active in your GCP project.
 3. Add your OpenAI API key
 4. Configure Firebase project settings
 5. Update the frontend API host to your local IP address
+6. Ensure all required credentials are in the `backend/credentials/` directory
 
 ### 5. Start the Application
 
@@ -150,59 +147,80 @@ This will start the Expo development server. Scan the QR code with Expo Go to ru
 
 ## 🔑 Key Features
 
-### Authentication
+### Authentication & User Management
 - Secure login/signup with Firebase authentication
 - JWT token-based session management
 - Protected API routes
+- Doctor profile management with first/last name support
+- Voice profile upload during signup
 
 ### Patient Management
 - Add and manage patient information
 - Store vital signs and contact details
 - Patient history tracking
+- Search and filter patients
+- Patient consult note history
 
-### Appointment Recording
+### Appointment Management
+- Create and schedule appointments
 - Real-time audio recording during consultations
+- Audio file upload support (MP3, M4A, WAV, etc.)
 - Speech-to-text transcription via Google Cloud
-- AI-powered consultation note generation
+- AI-powered consultation note generation with doctor/patient context
 - Manual note editing and refinement
+- Weight and height tracking
+- Appointment status management
+
+### Consult Note System
+- AI-generated consultation notes from audio transcripts
+- Preview mode with clickable full note viewing
+- Dedicated read-only consult note viewing screen
+- Note sharing in doctor communications
+- Patient-specific consult note history
 
 ### Chat System
 - Inter-doctor communication
 - Real-time messaging
-- Appointment discussion threads
+- Doctor search and filtering
+- Consult note sharing in chat messages
+- Professional consult note components in chat
 
 ### Profile Management
 - Doctor profile customization
 - Digital signature upload
 - Consultation note templates
+- Professional information management
 
 ## 🔌 API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
-- `POST /api/auth/signup` - User registration
+- `POST /api/auth/signup` - User registration with voice profile
 
 ### Doctors
 - `GET /api/doctors/me` - Get current doctor profile
 - `PUT /api/doctors/me` - Update doctor profile
+- `GET /api/doctors` - List all doctors for chat
 - `POST /api/doctors/me/signature` - Upload signature
 
 ### Patients
 - `GET /api/patients` - Get all patients
 - `POST /api/patients` - Create new patient
 - `GET /api/patients/:id` - Get patient details
+- `PUT /api/patients/:id` - Update patient information
 
 ### Appointments
 - `GET /api/appointments` - Get all appointments
 - `POST /api/appointments` - Create appointment
 - `PUT /api/appointments/:id` - Update appointment
-- `POST /api/appointments/:id/record` - Submit audio recording
+- `POST /api/appointments/:id/record` - Submit audio recording/upload
+- `DELETE /api/appointments/:id` - Cancel appointment
 
 ### Chats
 - `GET /api/chats` - Get all chats
 - `POST /api/chats` - Create new chat
-- `GET /api/chats/:id` - Get chat details
-- `POST /api/chats/:id/message` - Send message
+- `GET /api/chats/:id` - Get chat details with messages
+- `POST /api/chats/:id/message` - Send message with consult note support
 
 ## 🛠️ Development
 
@@ -224,50 +242,25 @@ cd frontend && expo build:android  # or expo build:ios
 cd backend && npm run build
 ```
 
+### Available Scripts
+```bash
+# Backend
+npm run start          # Start production server
+npm run dev           # Start development server with nodemon
+npm run enable-api    # Enable Google Cloud Speech-to-Text API
+
+# Frontend
+npm start             # Start Expo development server
+npm run android       # Run on Android emulator
+npm run ios          # Run on iOS simulator
+```
+
 ## 🔒 Security Considerations
 
 - All API endpoints are protected with JWT authentication
-- File uploads are validated and stored securely
+- File uploads are validated and stored securely in Firebase Storage
 - Environment variables are used for sensitive configuration
 - CORS is configured for secure cross-origin requests
 - Input validation and sanitization on all endpoints
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Backend Connection Failed**
-   - Ensure the backend is running on port 3001
-   - Check that your IP address is correctly set in the frontend
-   - Verify firewall settings allow connections
-
-2. **Authentication Errors**
-   - Check Firebase configuration
-   - Verify JWT secret is set correctly
-   - Ensure service account files are in the correct location
-
-3. **Audio Recording Issues**
-   - Grant microphone permissions in Expo Go
-   - Check Google Cloud Speech API is enabled
-   - Verify service account has proper permissions
-
-4. **Database Connection Issues**
-   - Verify MongoDB Atlas connection string
-   - Check network connectivity
-   - Ensure database user has proper permissions
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📞 Support
-
-For support and questions, please open an issue in the GitHub repository or contact the development team.
+- Secure audio file handling with proper MIME type validation
+- Protected patient data with role-based access control

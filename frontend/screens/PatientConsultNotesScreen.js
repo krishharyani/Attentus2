@@ -37,13 +37,13 @@ export default function PatientConsultNotesScreen() {
     return (
       <TouchableOpacity
         style={styles.consultNoteCard}
-        onPress={() => {
-          if (hasConsultNote) {
-            navigation.navigate('AppointmentDetail', { appointmentId: item._id });
-          } else {
-            Alert.alert('No Consult Note', 'This appointment does not have a consult note yet.');
-          }
-        }}
+                         onPress={() => {
+                   if (hasConsultNote) {
+                     navigation.navigate('ConsultNoteView', { appointmentId: item._id });
+                   } else {
+                     Alert.alert('No Consult Note', 'This appointment does not have a consult note yet.');
+                   }
+                 }}
       >
         <View style={styles.consultNoteHeader}>
           <Text style={styles.appointmentTitle}>{item.title}</Text>
